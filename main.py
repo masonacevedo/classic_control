@@ -5,7 +5,6 @@ np.random.seed(42)
 
 env = gym.make("CartPole-v1", render_mode="human")
 observation, info = env.reset()
-print(f"Starting observation: {observation}")
 
 ourAgent = Agent(a = np.random.uniform(-1,1),
                  b = np.random.uniform(-1,1),
