@@ -27,10 +27,10 @@ def evaluateAgent(a,b,c,d, numEpisodes=10, showRender=False):
     return total_reward_across_episodes/numEpisodes
 
 
-a_vals = np.linspace(-1,1, 3)
-b_vals = np.linspace(-1,1, 3)
-c_vals = np.linspace(-1,1, 3)
-d_vals = np.linspace(-1,1, 3)
+a_vals = np.linspace(-1,1, 11)
+b_vals = np.linspace(-1,1, 11)
+c_vals = np.linspace(-1,1, 11)
+d_vals = np.linspace(-1,1, 11)
 n = len(a_vals) * len(b_vals) * len(c_vals) * len(d_vals)
 
 # evaluateAgent(0,0,0,0,1)
