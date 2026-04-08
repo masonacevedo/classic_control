@@ -14,3 +14,6 @@ class Agent:
             return 1
         else:
             return 0
+
+    def __repr__(self):
+        return str([self.a, self.b, self.c, self.d])
