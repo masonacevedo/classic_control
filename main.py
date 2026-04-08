@@ -1,24 +1,28 @@
 import gymnasium as gym
 import numpy as np
 from agent import Agent
-np.random.seed(42)
 
-env = gym.make("CartPole-v1", render_mode="human")
-observation, info = env.reset()
 
-ourAgent = Agent(a = np.random.uniform(-1,1),
-                 b = np.random.uniform(-1,1),
-                 c = np.random.uniform(-1,1),
-                 d = np.random.uniform(-1,1))
+def evaluateAgent(a,b,c,d, numEpisodes=10):
+    total_reward_across_episodes = 0
+    for _ in range(0, numEpisodes):
+        env = gym.make("CartPole-v1", render_mode=None)
+        observation, info = env.reset()
 
-episode_over = False
-total_reward = 0
+        episode_over = False
+        episode_reward = 0
+        agentToTest = Agent(a,b,c,d)
+        while not episode_over:
+            action = agentToTest.chooseAction(observation)
+            observation, time_step_reward, terminated, truncated, info = env.step(action)
+            episode_reward += time_step_reward
+            episode_over = terminated or truncated
 
-while not episode_over:
-    action = ourAgent.chooseAction(observation)
-    observation, reward, terminated, truncated, info = env.step(action)
-    total_reward += reward
-    episode_over = terminated or truncated
+        print(f"Episode finished! Episode reward: {episode_reward}")
+        env.close()
+        total_reward_across_episodes += episode_reward
+    return total_reward_across_episodes/numEpisodes
 
-print(f"Episode finished! Total reward: {total_reward}")
-env.close()
+
+
+print("0,0,0,0:", evaluateAgent(0,0,0,0))
