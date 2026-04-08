@@ -1,16 +1,22 @@
 import gymnasium as gym
-
-from make_decision import make_decision
+import numpy as np
+from agent import Agent
+np.random.seed(42)
 
 env = gym.make("CartPole-v1", render_mode="human")
 observation, info = env.reset()
 print(f"Starting observation: {observation}")
 
+ourAgent = Agent(a = np.random.uniform(-1,1),
+                 b = np.random.uniform(-1,1),
+                 c = np.random.uniform(-1,1),
+                 d = np.random.uniform(-1,1))
+
 episode_over = False
 total_reward = 0
 
 while not episode_over:
-    action = make_decision(observation)
+    action = ourAgent.chooseAction(observation)
     observation, reward, terminated, truncated, info = env.step(action)
     total_reward += reward
     episode_over = terminated or truncated
