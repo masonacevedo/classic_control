@@ -3,7 +3,7 @@ import numpy as np
 from agent import Agent
 import time
 
-def evaluateAgent(a,b,c,d, numEpisodes=10, showRender=False):
+def evaluateAgent(agentToTest, numEpisodes=10, showRender=False):
     total_reward_across_episodes = 0
     for _ in range(0, numEpisodes):
         if showRender:
@@ -14,7 +14,6 @@ def evaluateAgent(a,b,c,d, numEpisodes=10, showRender=False):
 
         episode_over = False
         episode_reward = 0
-        agentToTest = Agent(a,b,c,d)
         while not episode_over:
             action = agentToTest.chooseAction(observation)
             observation, time_step_reward, terminated, truncated, info = env.step(action)
@@ -48,7 +47,7 @@ for a in a_vals:
                     print("n:", n)
                     print("i/n:", 100*i/n)
                     lastPrinted = time.time()
-                result = evaluateAgent(a,b,c,d)
+                result = evaluateAgent(Agent([a,b,c,d]))
                 k = (a,b,c,d)
                 results[k] = result
                 i += 1
@@ -60,6 +59,7 @@ bestResults = sortedResults[0:20]
 for params, reward in bestResults:
     print(params, "|", reward)
 
-bestResult = sortedResults[0][0]
+bestResultParams = list(sortedResults[0][0])
+bestAgent = Agent(bestResultParams)
 
-evaluateAgent(bestResult[0], bestResult[1], bestResult[2], bestResult[3], numEpisodes=1, showRender=True)
+evaluateAgent(bestAgent, numEpisodes=1, showRender=True)
