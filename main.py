@@ -25,41 +25,23 @@ def evaluateAgent(agentToTest, numEpisodes=10, showRender=False):
         total_reward_across_episodes += episode_reward
     return total_reward_across_episodes/numEpisodes
 
+currentParams = [np.random.uniform(-1,1) for _ in range(0,4)]
+currentEvaluation = evaluateAgent(Agent(currentParams))
+lastPrint = time.time()
+n=400
+for i in range(0, n):
+    if (time.time() - lastPrint) > 10:
+        lastPrint = time.time()
+        print("i/n:",100*i/n)
+        print()
+    adjustments = [np.random.uniform(-0.1, 0.1) for _ in range(0,4)]
+    newParams = [param + adjustment for param, adjustment in zip(currentParams, adjustments)]
+    newEvaluation = evaluateAgent(Agent(newParams), numEpisodes=30)
+    if newEvaluation > currentEvaluation:
+        currentParams = newParams
+        currentEvaluation = newEvaluation
 
-a_vals = np.linspace(-1,1, 11)
-b_vals = np.linspace(-1,1, 11)
-c_vals = np.linspace(-1,1, 11)
-d_vals = np.linspace(-1,1, 11)
-n = len(a_vals) * len(b_vals) * len(c_vals) * len(d_vals)
+bestAgent = Agent(currentParams)
 
-# evaluateAgent(0,0,0,0,1)
-lastPrinted = time.time()
-i = 0
-
-results = {}
-
-for a in a_vals:
-    for b in b_vals:
-        for c in c_vals:
-            for d in d_vals:
-                if time.time() - lastPrinted > 30:
-                    print("i:", i)
-                    print("n:", n)
-                    print("i/n:", 100*i/n)
-                    lastPrinted = time.time()
-                result = evaluateAgent(Agent([a,b,c,d]))
-                k = (a,b,c,d)
-                results[k] = result
-                i += 1
-
-
-sortedResults = sorted(results.items(), key= lambda i: i[1], reverse=True)
-bestResults = sortedResults[0:20]
-
-for params, reward in bestResults:
-    print(params, "|", reward)
-
-bestResultParams = list(sortedResults[0][0])
-bestAgent = Agent(bestResultParams)
-
-evaluateAgent(bestAgent, numEpisodes=1, showRender=True)
+bestReward = evaluateAgent(bestAgent, numEpisodes=1, showRender=True)
+print("bestReward:", bestReward)
