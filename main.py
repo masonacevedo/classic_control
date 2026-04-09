@@ -3,6 +3,28 @@ import numpy as np
 from agent import Agent
 import time
 
+def evaluateAgent(agentToTest, numEpisodes=10, showRender=False):
+    total_reward_across_episodes = 0
+    for _ in range(0, numEpisodes):
+        if showRender:
+            env = gym.make("CartPole-v1", render_mode="human")
+        else:
+            env = gym.make("CartPole-v1", render_mode=None)
+        observation, info = env.reset()
+
+        episode_over = False
+        episode_reward = 0
+        while not episode_over:
+            action = agentToTest.chooseAction(observation)
+            observation, time_step_reward, terminated, truncated, info = env.step(action)
+            episode_reward += time_step_reward
+            episode_over = terminated or truncated
+
+        # print(f"Episode finished! Episode reward: {episode_reward}")
+        env.close()
+        total_reward_across_episodes += episode_reward
+    return total_reward_across_episodes/numEpisodes
+
 def runEpisode(agentToUse, showRender=False):
     if showRender:
         env = gym.make("CartPole-v1", render_mode="human")
@@ -37,8 +59,8 @@ def calculateReturn(startIndex, rewards, gamma):
 
 weights = [np.random.uniform(-1,1) for _ in range(0,4)]
 agent = Agent(weights)
-gamma = 0.9
-learning_rate = 0.1
+gamma = 0.99
+learning_rate = 0.001
 
 
 for _ in range(0, 1000):
@@ -66,7 +88,7 @@ for _ in range(0, 1000):
 
 _,_, rewards = runEpisode(agent, showRender=True)
 print("totalReward:", sum(rewards))
-
+print("evaluateAgent:", evaluateAgent(agent))
 
 
 # for each timestep:
