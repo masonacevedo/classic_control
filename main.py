@@ -34,18 +34,47 @@ def runEpisode(agentToUse, showRender=False):
     observation, info = env.reset()
     episode_over = False
     all_rewards = []
+    all_actions = []
     while not episode_over:
         action = agentToUse.chooseAction(observation)
         observation, reward, terminated, truncated, info = env.step(action)
+        all_actions.append(action)
         all_rewards.append(reward)
         episode_over = (terminated or truncated)
     env.close()
-    return all_rewards
+    return all_actions, all_rewards
+
+# this iterative method of calculating rewards is slow. 
+# better to calculate them all at once using the recursive formula.
+# O(n) rather than O(n^2)
+def calculateReturn(startIndex, rewards, gamma):
+    totalReturn = 0
+    count = 0
+    for i in range(startIndex, len(rewards)):
+        totalReturn += (gamma**count) * rewards[index]
+    return totalReturn
 
 weights = [np.random.uniform(-1,1) for _ in range(0,4)]
-rewards = runEpisode(Agent(weights), showRender=False)
-print("rewards:", rewards)
-print("sum(rewards):", sum(rewards))
+a = Agent(weights)
+actions, rewards = runEpisode(a, True)
+print("actions:", actions)
+print("len(actions):", len(actions))
+print("len(rewards):", len(rewards))
+# gamma = 0.9
+# learning_rate = 0.1
+
+
+# for _ in range(0, 10):
+#     rewardsReceived = runEpisode(a)
+#     for i in range(0, len(rewardsReceived)):
+#         reward = rewardsReceived[i]
+#         returnFromHere = calculateReturn(i, rewardsReceived, gamma)
+#         gradient_vector = 
+
+
+
+
+
 # for each timestep:
 #     compute G_t
 #     plug in state, compute gradient of action we took with respect to learned weights
