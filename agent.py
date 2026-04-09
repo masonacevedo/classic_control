@@ -7,18 +7,14 @@ class Agent:
         self.params = params
 
     def chooseAction(self, observation, verbose=False):
-        w,x,y,z = observation
-        a,b,c,d = self.params
 
-        score = a*w + b*x + c*y + d*z
-        p = 1/(1+np.exp(-1*score))
-
+        p = self.rightProbability(observation)
         sample = np.random.uniform(0,1)
 
         if p < sample:
-            action = 0
-        else:
             action = 1
+        else:
+            action = 0
 
         if verbose:
             print("score:", score)
@@ -27,6 +23,14 @@ class Agent:
             print("action:", action)
             print()
         return action
+
+    def rightProbability(self, observation):
+        w,x,y,z = observation
+        a,b,c,d = self.params
+
+        score = a*w + b*x + c*y + d*z
+        p = 1/(1+np.exp(-1*score))
+        return p
 
     def updateWeights(self, nudge):
         self.params = [num + param for num, param in zip(nudge, self.params)]
