@@ -61,11 +61,18 @@ weights = [np.random.uniform(-1,1) for _ in range(0,4)]
 agent = Agent(weights)
 gamma = 0.99
 learning_rate = 0.001
+numEpochs = 10000
 
-
-for _ in range(0, 1000):
+lastPrint = time.time()
+for epoch in range(0, numEpochs):
     states, actions, rewards = runEpisode(agent)
     for i in range(0, len(rewards)):
+        if time.time() - lastPrint > 30:
+            print("epoch:     ", epoch)
+            print("numEpochs: ", numEpochs)
+            print("percentage:", 100*epoch/numEpochs)
+            print()
+            lastPrint = time.time()
         reward = rewards[i]
         action = actions[i]
         state = states[i]
