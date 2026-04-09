@@ -28,6 +28,8 @@ class Agent:
             print()
         return action
 
+    def updateWeights(self, nudge):
+        self.params = [num + param for num, param in zip(nudge, self.params)]
 
     def __repr__(self):
         return str([self.a, self.b, self.c, self.d])
