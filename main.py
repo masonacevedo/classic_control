@@ -53,18 +53,19 @@ for _ in range(0, 1000):
         # if we moved left
         if action == 0:
             p = agent.rightProbability(state)
-            gradient_vector = (1 - p) * state
+            gradient_vector = (-p) * state
 
         # if we moved right
         else:
             p = agent.rightProbability(state)
-            gradient_vector = (-p) * state
+            gradient_vector = (1-p) * state
 
         nudge = learning_rate * returnFromHere * gradient_vector
         agent.updateWeights(nudge)
 
 
-runEpisode(agent, showRender=True)
+_,_, rewards = runEpisode(agent, showRender=True)
+print("totalReward:", sum(rewards))
 
 
 

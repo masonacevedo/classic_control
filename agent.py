@@ -11,7 +11,7 @@ class Agent:
         p = self.rightProbability(observation)
         sample = np.random.uniform(0,1)
 
-        if p < sample:
+        if sample < p:
             action = 1
         else:
             action = 0
