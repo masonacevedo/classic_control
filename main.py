@@ -2,6 +2,7 @@ import gymnasium as gym
 import numpy as np
 from agent import Agent
 import time
+import matplotlib.pyplot as plt
 
 def evaluateAgent(agentToTest, numEpisodes=10, showRender=False):
     total_reward_across_episodes = 0
@@ -61,16 +62,20 @@ weights = [np.random.uniform(-1,1) for _ in range(0,4)]
 agent = Agent(weights)
 gamma = 0.99
 learning_rate = 0.001
-numEpochs = 10000
+numEpisodes = 2000
+
+episodeNumbers = []
+rewardsPerEpisode = []
 
 lastPrint = time.time()
-for epoch in range(0, numEpochs):
+for episodeCount in range(0, numEpisodes):
     states, actions, rewards = runEpisode(agent)
     for i in range(0, len(rewards)):
+
         if time.time() - lastPrint > 30:
-            print("epoch:     ", epoch)
-            print("numEpochs: ", numEpochs)
-            print("percentage:", 100*epoch/numEpochs)
+            print("epoch:     ", episodeCount)
+            print("numEpochs: ", numEpisodes)
+            print("percentage:", 100*episodeCount/numEpisodes)
             print()
             lastPrint = time.time()
         reward = rewards[i]
@@ -92,11 +97,16 @@ for epoch in range(0, numEpochs):
         nudge = learning_rate * returnFromHere * gradient_vector
         agent.updateWeights(nudge)
 
+    episodeNumbers.append(episodeCount)
+    rewardsPerEpisode.append(sum(rewards))
+
+
 
 _,_, rewards = runEpisode(agent, showRender=True)
 print("totalReward:", sum(rewards))
-print("evaluateAgent:", evaluateAgent(agent))
 
+plt.plot(episodeNumbers, rewardsPerEpisode)
+plt.show()
 
 # for each timestep:
 #     compute G_t
