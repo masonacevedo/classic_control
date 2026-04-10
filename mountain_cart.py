@@ -23,8 +23,26 @@ def runEpisode(agentToUse, env):
 
     return states, actions, rewards
 
+def calculateReturns(rewards, gamma):
+    returnsList = []
+    for r in reversed(rewards):
+        if len(returnsList) == 0:
+            returnsList.append(r)
+        else:
+            returnsList.append(r + gamma*returnsList[-1])
+    return list(reversed(returnsList))
 
+env = gym.make("MountainCar", render_mode=None)
 params = [np.random.uniform(-1,1) for _ in range(0,6)]
 agent = CartAgent(params)
-env = gym.make("MountainCar", render_mode="human")
-states, actions, rewards = runEpisode(agent, env)
+gamma = .99
+
+numEpisodes = 10
+for episodeNumber in range(0, numEpisodes):
+    states, actions, rewards = runEpisode(agent, env)
+    allReturns = calculateReturns(rewards, gamma)
+    print("allReturns:", allReturns)
+    print("len(allReturns):", len(allReturns))
+    print("len(rewards):   ", len(rewards))
+    # for i in range(0, len(rewards)):
+    #     state, action, reward = states[i], actions[i], rewards[i]
