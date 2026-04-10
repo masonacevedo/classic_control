@@ -3,6 +3,7 @@ import numpy as np
 from agent import Agent
 import time
 import matplotlib.pyplot as plt
+import torch
 
 def runEpisode(agentToUse, env):
 
@@ -32,10 +33,12 @@ def calculateReturn(startIndex, rewards, gamma):
         count += 1
     return totalReturn
 
-weights = [np.random.uniform(-1,1) for _ in range(0,4)]
-agent = Agent(weights)
+
+agent = Agent()
 gamma = 0.99
-learning_rate = 0.001
+
+optimizer = torch.optim.Adam(agent.parameters(), lr=0.001)
+
 numEpisodes = 2000
 
 episodeNumbers = []
@@ -49,6 +52,8 @@ for episodeCount in range(0, numEpisodes):
     states, actions, rewards = runEpisode(agent, env)
     for i in range(0, len(rewards)):
 
+        optimizer.zero_grad()
+
         if time.time() - lastPrint > 30:
             print("epoch:     ", episodeCount)
             print("numEpochs: ", numEpisodes)
@@ -59,20 +64,12 @@ for episodeCount in range(0, numEpisodes):
         action = actions[i]
         state = states[i]
         returnFromHere = calculateReturn(i, rewards, gamma)
-        p = agent.rightProbability(state)
+        probability = agent.forward(state)[action]
+        log_prob = torch.log(probability)
 
-        # if we moved left
-        if action == 0:
-            p = agent.rightProbability(state)
-            gradient_vector = (-p) * state
-
-        # if we moved right
-        else:
-            p = agent.rightProbability(state)
-            gradient_vector = (1-p) * state
-
-        nudge = learning_rate * returnFromHere * gradient_vector
-        agent.updateWeights(nudge)
+        loss = -1*returnFromHere * log_prob
+        loss.backward()
+        optimizer.step()
 
     episodeNumbers.append(episodeCount)
     rewardsPerEpisode.append(sum(rewards))
