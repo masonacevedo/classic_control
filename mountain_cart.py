@@ -51,7 +51,7 @@ gamma = .99
 learning_rate = 0.001
 optimizer = torch.optim.Adam(agent.parameters(), lr = learning_rate)
 
-numEpisodes = 1
+numEpisodes = 100
 lastPrint = time.time()
 
 episodes = []
@@ -84,7 +84,7 @@ for episodeNumber in range(0, numEpisodes):
     rewardsPerEpisode.append(sum(rewards))
 
 
-torch.save(agent.state_dict(), "cart_agent_weights.pth")
+torch.save(agent.state_dict(), weights_file_path)
 
 env = gym.make("MountainCar-v0", render_mode="human")
 env.reset()
