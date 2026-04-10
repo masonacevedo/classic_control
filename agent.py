@@ -1,39 +1,22 @@
 import numpy as np
+import torch
+import torch.nn as nn
 
-class Agent:
-    def __init__(self, params):
-        if len(params) != 4:
-            raise Exception("Invalid argument to agent construtor! Must be a list of 4 parameters.")
-        self.params = params
+class Agent(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.linear_layer = nn.Linear(4, 2, bias=False)
 
-    def chooseAction(self, observation, verbose=False):
+    def chooseAction(self, observation):
+        with torch.no_grad():
+            probabilities = self.forward(observation)
+        return torch.multinomial(probabilities,1).item()
 
-        p = self.rightProbability(observation)
-        sample = np.random.uniform(0,1)
-
-        if sample < p:
-            action = 1
-        else:
-            action = 0
-
-        if verbose:
-            print("score:", score)
-            print("p:", p)
-            print("sample:", sample)
-            print("action:", action)
-            print()
-        return action
-
-    def rightProbability(self, observation):
-        w,x,y,z = observation
-        a,b,c,d = self.params
-
-        score = a*w + b*x + c*y + d*z
-        p = 1/(1+np.exp(-1*score))
-        return p
-
-    def updateWeights(self, nudge):
-        self.params = [num + param for num, param in zip(nudge, self.params)]
-
+    def forward(self, observation):
+        x = torch.tensor(observation)
+        logits = self.linear_layer(x)
+        probs = torch.softmax(logits, dim=0)
+        return probs
+    
     def __repr__(self):
-        return str([self.a, self.b, self.c, self.d])
+        return str(self.linear_layer)
