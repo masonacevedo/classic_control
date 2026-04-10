@@ -4,28 +4,6 @@ from agent import Agent
 import time
 import matplotlib.pyplot as plt
 
-def evaluateAgent(agentToTest, numEpisodes=10, showRender=False):
-    total_reward_across_episodes = 0
-    for _ in range(0, numEpisodes):
-        if showRender:
-            env = gym.make("CartPole-v1", render_mode="human")
-        else:
-            env = gym.make("CartPole-v1", render_mode=None)
-        observation, info = env.reset()
-
-        episode_over = False
-        episode_reward = 0
-        while not episode_over:
-            action = agentToTest.chooseAction(observation)
-            observation, time_step_reward, terminated, truncated, info = env.step(action)
-            episode_reward += time_step_reward
-            episode_over = terminated or truncated
-
-        # print(f"Episode finished! Episode reward: {episode_reward}")
-        env.close()
-        total_reward_across_episodes += episode_reward
-    return total_reward_across_episodes/numEpisodes
-
 def runEpisode(agentToUse, env):
 
     observation, info = env.reset()
@@ -64,7 +42,6 @@ episodeNumbers = []
 rewardsPerEpisode = []
 
 lastPrint = time.time()
-showRender = False
 env = gym.make("CartPole-v1", render_mode=None)
 
 for episodeCount in range(0, numEpisodes):
