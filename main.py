@@ -26,11 +26,7 @@ def evaluateAgent(agentToTest, numEpisodes=10, showRender=False):
         total_reward_across_episodes += episode_reward
     return total_reward_across_episodes/numEpisodes
 
-def runEpisode(agentToUse, showRender=False):
-    if showRender:
-        env = gym.make("CartPole-v1", render_mode="human")
-    else:
-        env = gym.make("CartPole-v1", render_mode=None)
+def runEpisode(agentToUse, env):
 
     observation, info = env.reset()
     episode_over = False
@@ -68,8 +64,12 @@ episodeNumbers = []
 rewardsPerEpisode = []
 
 lastPrint = time.time()
+showRender = False
+env = gym.make("CartPole-v1", render_mode=None)
+
 for episodeCount in range(0, numEpisodes):
-    states, actions, rewards = runEpisode(agent)
+
+    states, actions, rewards = runEpisode(agent, env)
     for i in range(0, len(rewards)):
 
         if time.time() - lastPrint > 30:
@@ -101,8 +101,8 @@ for episodeCount in range(0, numEpisodes):
     rewardsPerEpisode.append(sum(rewards))
 
 
-
-_,_, rewards = runEpisode(agent, showRender=True)
+env = gym.make("CartPole-v1", render_mode="human")
+_,_, rewards = runEpisode(agent, env)
 print("totalReward:", sum(rewards))
 
 plt.plot(episodeNumbers, rewardsPerEpisode)
