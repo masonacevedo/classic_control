@@ -4,6 +4,7 @@ import numpy as np
 import time
 import torch
 import matplotlib.pyplot as plt
+import os
 
 def runEpisode(agentToUse, env):
     observation, info = env.reset()
@@ -12,12 +13,14 @@ def runEpisode(agentToUse, env):
     states = [observation]
     actions = []
     rewards = []
+    bestSoFar = float('-inf')
     while not(episode_over):
         action = agentToUse.chooseAction(observation)
         observation, reward, terminated, truncated, info = env.step(action)
         states.append(observation)
         actions.append(action)
-        rewards.append(reward)
+        bestSoFar = max(bestSoFar, abs(observation[1]))
+        rewards.append(bestSoFar)
         episode_over = (terminated or truncated)
 
     env.close()
@@ -33,15 +36,22 @@ def calculateReturns(rewards, gamma):
             returnsList.append(r + gamma*returnsList[-1])
     return list(reversed(returnsList))
 
+weights_file_path = "agent_weights.pth"
+agent = CartAgent()
+if os.path.exists(weights_file_path):
+    agent.load_state_dict(torch.load(weights_file_path))
+    print("loaded agent from existing weights")
+else:
+    print("agent beginning with random weights")
+
 
 env = gym.make("MountainCar-v0", render_mode=None)
-agent = CartAgent()
 gamma = .99
 
 learning_rate = 0.001
 optimizer = torch.optim.Adam(agent.parameters(), lr = learning_rate)
 
-numEpisodes = 1000
+numEpisodes = 1
 lastPrint = time.time()
 
 episodes = []
@@ -64,7 +74,7 @@ for episodeNumber in range(0, numEpisodes):
         probabilities = agent.forward(state)
         prob_of_action = probabilities[action]
         log_prob = torch.log(prob_of_action)
-        loss = log_prob * totalReturn
+        loss = -1*log_prob * totalReturn
 
         loss.backward()
 
@@ -74,9 +84,12 @@ for episodeNumber in range(0, numEpisodes):
     rewardsPerEpisode.append(sum(rewards))
 
 
-# env = gym.make("MountainCar-v0", render_mode=None")
-# env.reset()
-# runEpisode(agent, env)
+torch.save(agent.state_dict(), "cart_agent_weights.pth")
+
+env = gym.make("MountainCar-v0", render_mode="human")
+env.reset()
+states, actions, rewards = runEpisode(agent, env)
+    
 
 plt.plot(episodes, rewardsPerEpisode, ".")
 plt.show()
