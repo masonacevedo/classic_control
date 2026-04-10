@@ -1,8 +1,9 @@
 import gymnasium as gym
 from cart_agent import CartAgent
 import numpy as np
-
-
+import time
+import torch
+import matplotlib.pyplot as plt
 
 def runEpisode(agentToUse, env):
     observation, info = env.reset()
@@ -32,17 +33,50 @@ def calculateReturns(rewards, gamma):
             returnsList.append(r + gamma*returnsList[-1])
     return list(reversed(returnsList))
 
-env = gym.make("MountainCar", render_mode=None)
-params = [np.random.uniform(-1,1) for _ in range(0,6)]
-agent = CartAgent(params)
+
+env = gym.make("MountainCar-v0", render_mode=None)
+agent = CartAgent()
 gamma = .99
 
-numEpisodes = 10
+learning_rate = 0.001
+optimizer = torch.optim.Adam(agent.parameters(), lr = learning_rate)
+
+numEpisodes = 1000
+lastPrint = time.time()
+
+episodes = []
+rewardsPerEpisode = []
 for episodeNumber in range(0, numEpisodes):
+    if time.time() - lastPrint > 30:
+        print("episode:     ", episodeNumber)
+        print("numEpisodes: ", numEpisodes)
+        print("percentage:  ", 100*episodeNumber/numEpisodes)
+        print()
+        lastPrint = time.time()
+
     states, actions, rewards = runEpisode(agent, env)
     allReturns = calculateReturns(rewards, gamma)
-    print("allReturns:", allReturns)
-    print("len(allReturns):", len(allReturns))
-    print("len(rewards):   ", len(rewards))
-    # for i in range(0, len(rewards)):
-    #     state, action, reward = states[i], actions[i], rewards[i]
+    for i in range(0, len(rewards)):
+        state, action, totalReturn = states[i], actions[i], allReturns[i]
+
+        optimizer.zero_grad()
+
+        probabilities = agent.forward(state)
+        prob_of_action = probabilities[action]
+        log_prob = torch.log(prob_of_action)
+        loss = log_prob * totalReturn
+
+        loss.backward()
+
+        optimizer.step()
+
+    episodes.append(episodeNumber)
+    rewardsPerEpisode.append(sum(rewards))
+
+
+# env = gym.make("MountainCar-v0", render_mode=None")
+# env.reset()
+# runEpisode(agent, env)
+
+plt.plot(episodes, rewardsPerEpisode, ".")
+plt.show()
