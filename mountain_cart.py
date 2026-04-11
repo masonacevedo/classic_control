@@ -52,7 +52,7 @@ gamma = .99
 learning_rate = 0.0001
 optimizer = torch.optim.Adam(agent.parameters(), lr = learning_rate)
 
-numEpisodes = 2000
+numEpisodes = 200
 lastPrint = time.time()
 
 episodes = []
@@ -88,7 +88,7 @@ for episodeNumber in range(0, numEpisodes):
 
 torch.save(agent.state_dict(), weights_file_path.replace(".pth", "_2.pth"))
 
-env = gym.make("MountainCar-v0", render_mode="human")
+env = gym.make("MountainCar-v0", render_mode="human", max_episode_steps=400)
 env.reset()
 states, actions, rewards = runEpisode(agent, env)
     
