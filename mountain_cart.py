@@ -6,6 +6,10 @@ import torch
 import matplotlib.pyplot as plt
 import os
 
+def rollingAverage(data, windowSize):
+    kernel = np.ones(windowSize) / windowSize
+    return np.convolve(data, kernel, mode='valid')
+
 def runEpisode(agentToUse, env):
     observation, info = env.reset()
     episode_over = False
@@ -13,17 +17,14 @@ def runEpisode(agentToUse, env):
     states = [observation]
     actions = []
     rewards = []
-    bestSoFar = float('-inf')
     while not(episode_over):
         action = agentToUse.chooseAction(observation)
         observation, reward, terminated, truncated, info = env.step(action)
         states.append(observation)
         actions.append(action)
-        bestSoFar = max(bestSoFar, abs(observation[1]))
-        rewards.append(bestSoFar)
-        episode_over = (terminated or truncated)
 
-    env.close()
+        rewards.append(reward)
+        episode_over = (terminated or truncated)
 
     return states, actions, rewards
 
@@ -45,13 +46,13 @@ else:
     print("agent beginning with random weights")
 
 
-env = gym.make("MountainCar-v0", render_mode=None)
+env = gym.make("MountainCar-v0", render_mode=None, max_episode_steps=400)
 gamma = .99
 
-learning_rate = 0.001
+learning_rate = 0.0001
 optimizer = torch.optim.Adam(agent.parameters(), lr = learning_rate)
 
-numEpisodes = 100
+numEpisodes = 2000
 lastPrint = time.time()
 
 episodes = []
@@ -84,12 +85,16 @@ for episodeNumber in range(0, numEpisodes):
     rewardsPerEpisode.append(sum(rewards))
 
 
-torch.save(agent.state_dict(), weights_file_path)
+
+torch.save(agent.state_dict(), weights_file_path.replace(".pth", "_2.pth"))
 
 env = gym.make("MountainCar-v0", render_mode="human")
 env.reset()
 states, actions, rewards = runEpisode(agent, env)
     
-
-plt.plot(episodes, rewardsPerEpisode, ".")
+window = 20
+averaged = rollingAverage(rewardsPerEpisode, window)
+plt.plot(episodes, rewardsPerEpisode, ".", alpha=0.3, label="raw")
+plt.plot(episodes[window-1:], averaged, label="rolling average")
+plt.legend()
 plt.show()
