@@ -17,12 +17,15 @@ def runEpisode(agentToUse, env):
     states = [observation]
     actions = []
     rewards = []
+    # bestSoFar = 0
     while not(episode_over):
         action = agentToUse.chooseAction(observation)
         observation, reward, terminated, truncated, info = env.step(action)
         states.append(observation)
         actions.append(action)
-
+        # previousBest = bestSoFar
+        # bestSoFar = max(bestSoFar, abs(observation[1]))
+        # rewards.append(bestSoFar - previousBest)
         rewards.append(reward)
         episode_over = (terminated or truncated)
 
@@ -85,7 +88,7 @@ for episodeNumber in range(0, numEpisodes):
     rewardsPerEpisode.append(sum(rewards))
 
 
-
+# torch.save(agent.state_dict(), weights_file_path)
 torch.save(agent.state_dict(), weights_file_path.replace(".pth", "_2.pth"))
 
 env = gym.make("MountainCar-v0", render_mode="human", max_episode_steps=400)
