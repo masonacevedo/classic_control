@@ -6,7 +6,8 @@ import torch.nn as nn
 class CartAgent(nn.Module):
     def __init__(self):
         super().__init__()
-        self.linear = nn.Linear(2,3, bias=False)
+        self.linear1 = nn.Linear(2,12, bias=True)
+        self.linear2 = nn.Linear(12,3, bias=True)
 
     def chooseAction(self, observation, verbose=False):
         with torch.no_grad():
@@ -15,8 +16,9 @@ class CartAgent(nn.Module):
 
     def forward(self, observation):
         x = torch.tensor(observation)
-        logits = self.linear(x)
-        probabilities = torch.softmax(logits, dim=0)
+        x = torch.relu(self.linear1(x))
+        x = self.linear2(x)
+        probabilities = torch.softmax(x, dim=0)
         return probabilities
         
 
