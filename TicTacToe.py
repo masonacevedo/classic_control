@@ -95,17 +95,3 @@ class TicTacToe:
 
 
         return True, None
-
-
-game = GameState()
-legalMoves = TicTacToe.get_legal_moves(game)
-print("legalMoves:", legalMoves)
-print("board:")
-print(game.board)
-print()
-newGame = TicTacToe.apply_move(game, [0,2])
-print("newGame.board:")
-print(newGame.board)
-print()
-legalMoves = TicTacToe.get_legal_moves(newGame)
-print("legalMovesLater:", legalMoves)
