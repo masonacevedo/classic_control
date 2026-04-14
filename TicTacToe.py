@@ -9,6 +9,9 @@ class GameState:
         else:
             self.board = Board()
 
+    def __repr__(self):
+        return str(self.board) + "|" + str(self.whoseTurn)
+
 
 class Board:
     def __init__(self, tiles=None):
