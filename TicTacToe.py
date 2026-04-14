@@ -57,6 +57,9 @@ class TicTacToe:
         return GameState(nextTurn, newBoard)
 
     def is_over(state: GameState) -> [bool, str | None]:
+        # returns True/False about whether game is over,
+        # and if the game has a winner, it returns the winner
+
         board = state.board.tiles
         winning_triplets = [
             ((0, 0), (0, 1), (0, 2)),
