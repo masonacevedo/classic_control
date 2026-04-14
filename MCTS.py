@@ -7,7 +7,25 @@ def runMCTS(state: GameState):
     #        perform a rollout on each option at least once. keep track of 
     #        the number of times each move has been played, along with the value of that move. 
     #        Then, 
-    pass
+    legal_moves = TicTacToe.get_legal_moves(state)
+
+    rollout_data = {}
+    
+    rng = np.random.default_rng()
+
+    for move in legal_moves:
+        resulting_state = TicTacToe.apply_move(state, move)
+        rollout_result = rollout(resulting_state, rng)
+        visit_count = 1
+
+        state_string = str(resulting_state)
+        print("state_string:")
+        print(state_string)
+        print()
+        rollout_data[state_string] = (rollout_result, visit_count)
+    
+    print("rollout_data")
+    print(rollout_data)
 
 
 def rollout(state: GameState, rng):
@@ -33,8 +51,12 @@ def rollout(state: GameState, rng):
     else:
         return -1
 
-rng = np.random.default_rng()
 
 newGame = GameState()
-result = rollout(newGame, rng)
-print("result:", result)
+runMCTS(newGame)
+
+# rng = np.random.default_rng()
+
+# newGame = GameState()
+# result = rollout(newGame, rng)
+# print("result:", result)
