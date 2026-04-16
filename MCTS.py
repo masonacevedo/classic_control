@@ -141,18 +141,16 @@ def rollout(node: Node, rng):
     else:
         return -1
 
-
-custom_tiles = \
-[
-    ["*", "*", "*"],
-    ["*", "x", "*"],
-    ["*", "*", "*"]
-]
-whoseTurn = "o"
-
-custom_board = Board(custom_tiles)
-initial_state = GameState(whoseTurn, board=custom_board)
-
+initial_state = GameState()
+# custom_tiles = \
+# [
+#     ["*", "*", "x"],
+#     ["*", "*", "*"],
+#     ["o", "*", "*"]
+# ]
+# whoseTurn = "x"
+# custom_board = Board(custom_tiles)
+# initial_state = GameState(whoseTurn, board=custom_board)
 
 
 file_name = "result.pkl"
@@ -160,16 +158,29 @@ if os.path.exists(file_name):
     with open(file_name, "rb") as f:
         result = pickle.load(f)
 else:
+
     result = runMCTS(initial_state, 30)
     with open(file_name, "wb") as f:
         pickle.dump(result, f)
 
+print("Optimal Tic-Tac-Toe game:")
+print("initial state:")
+print(initial_state)
+print("\n\n")
 
-child = result.child_nodes[0]
-grandchild = child.child_nodes[0]
-great = grandchild.child_nodes[-2]
-for c in great.child_nodes:
-    print("next move:")
-    print(c)
-    print("average reward:", c.total_reward/c.times_visited)
+current_node = result
+current_state = current_node.game_state
+while current_node.child_nodes:
+    current_state = current_node.game_state
+
+    child_scores = [node.times_visited for node in current_node.child_nodes]
+    best_child_index = child_scores.index(max(child_scores))
+    best_child = current_node.child_nodes[best_child_index]
+    current_node = best_child
+
+    print(current_state.board)
     print()
+    print()
+
+current_state = current_node.game_state
+print(current_state.board)
