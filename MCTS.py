@@ -94,6 +94,7 @@ def selectChild(nodes):
 
 def performBackpropagation(node, result):
     game_over, winner = node.game_state.is_over()
+    result *= -1
     
     
     if not(game_over):
