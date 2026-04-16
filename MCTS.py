@@ -148,18 +148,14 @@ def rollout(node: Node, rng):
         legal_moves = TicTacToe.get_legal_moves(state)
         is_over, winner = TicTacToe.is_over(state)
     
-    try:
-        if winner == None:
-            return 0
-        elif winner == original_player:
-            return 1
-        else:
-            return -1
-    except:
-        print("TicTacToe.is_over(state):", TicTacToe.is_over(state))
-        print("node:")
-        print(node)
-        input("got here...")
+
+    if winner == None:
+        return 0
+    elif winner == original_player:
+        return 1
+    else:
+        return -1
+
 
 
 result = runMCTS()
