@@ -141,25 +141,31 @@ def rollout(node: Node, rng):
     
     
     legal_moves = TicTacToe.get_legal_moves(state)
-    is_over = False
+    is_over, winner = TicTacToe.is_over(state)
     while len(legal_moves) > 0 and not(is_over):
-        
         move_to_perform = rng.choice(legal_moves)
         state = TicTacToe.apply_move(state, move_to_perform)
         legal_moves = TicTacToe.get_legal_moves(state)
         is_over, winner = TicTacToe.is_over(state)
     
-    if winner == None:
-        return 0
-    elif winner == original_player:
-        return 1
-    else:
-        return -1
+    try:
+        if winner == None:
+            return 0
+        elif winner == original_player:
+            return 1
+        else:
+            return -1
+    except:
+        print("TicTacToe.is_over(state):", TicTacToe.is_over(state))
+        print("node:")
+        print(node)
+        input("got here...")
 
 
 result = runMCTS()
 
 # rng = np.random.default_rng()
+print("result:", result)
 
 childrenTotal = sum([n.times_visited for n in result.child_nodes])
 assert(result.times_visited == childrenTotal)
