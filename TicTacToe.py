@@ -9,6 +9,9 @@ class GameState:
         else:
             self.board = Board()
 
+    def is_over(self):
+        return TicTacToe.is_over(self)
+
     def __repr__(self):
         return str(self.board) + "|" + str(self.whoseTurn)
 
