@@ -1,10 +1,10 @@
 import numpy as np
-from TicTacToe import TicTacToe, GameState
+from TicTacToe import TicTacToe, GameState, Board
 import time
 import matplotlib.pyplot as plt
 
 
-C = np.sqrt(2)
+C = 2*np.sqrt(2)
 
 # MCTS algorithm: 
     #     Build Tree. 
@@ -28,31 +28,32 @@ class Node:
         ans += str(self.game_state) + "\n"
         ans += "total_reward:" + str(self.total_reward) + "\n"
         ans += "times_visited:" + str(self.times_visited) + "\n"
-        # ans += "parent:" + str(self.parent) + "\n"
         ans += "child_nodes:" + str(len(self.child_nodes)) + "\n"
         return ans
         
 
 def runMCTS(t):
     
+    # custom_tiles = \
+    # [
+    #     ["x", "o", "*"],
+    #     ["*", "x", "x"],
+    #     ["*", "*", "o"]
+    # ]
+
+    # custom_board = Board(custom_tiles)
+
+    # initial_state = GameState(whoseTurn="o", board=custom_board)
     initial_state = GameState()
     root_node = initializeTree(initial_state)
 
     start_time = time.time()
     
     rng = np.random.default_rng()
-    # run algorithm for 1 second, just as a starting point.
-    # print("root_node")
-    # print(root_node)
     while time.time() - start_time < t:
         leaf_node = descendTree(root_node)
-        # print("leaf_node before backprop:")
-        # print(leaf_node)
         result = rollout(leaf_node, rng)
         performBackpropagation(leaf_node, result)
-        # print("leaf_node after backprop: ")
-        # print(leaf_node)
-        # input("enter to continue")
 
     
     return root_node
@@ -69,10 +70,6 @@ def descendTree(node):
         children = current_node.child_nodes
         current_node = selectChild(children)
     
-    # print("found a leaf node")
-    # print("current_node:")
-    # print(current_node)
-    # input("enter to continue")
     return current_node
     
 
@@ -91,13 +88,6 @@ def selectChild(nodes):
             score = exploit_term + explore_term
 
             scores.append(score)
-            
-            # print("exploit_term:", exploit_term)
-            # print("explore_term:", explore_term)
-            # print("score:", score)
-            # print()
-
-    
     
     maxScoreIndex = scores.index(max(scores))
     return nodes[maxScoreIndex]
@@ -162,21 +152,16 @@ def rollout(node: Node, rng):
 
 
 
-
-avg_rewards = []
-t_values = list(range(1,25))
-for t in t_values:
-    result_node = runMCTS(t)
-    avg_reward = result_node.total_reward/result_node.times_visited
-    avg_rewards.append(avg_reward)
-    print("Monte carlo for", t, "seconds complete.")
-    print(t, ":", avg_reward)
+result = runMCTS(10)
+print("starting board:")
+print(result)
+print("average reward:", result.total_reward/result.times_visited)
+print()
+for child in result.child_nodes:
+    print("next move:")
+    print(child)
+    print("average reward:", child.total_reward/child.times_visited)
     print()
-
-plt.plot(t_values, avg_rewards)
-plt.show()
-
-result = runMCTS(1)
 
 childrenTotal = sum([n.times_visited for n in result.child_nodes])
 assert(result.times_visited == childrenTotal)
@@ -189,13 +174,3 @@ for i in range(0,3):
 
         grandchild00 = child0.child_nodes[j]
         greatGrandChildrenTotal = sum([n.times_visited for n in grandchild00.child_nodes])
-
-        assert(grandchild00.times_visited == greatGrandChildrenTotal + 1)
-
-# grandchild00 = result.child_nodes[0].child_nodes[0]
-# print("grandchild00")
-# print(grandchild00)
-
-# for great in grandchild00.child_nodes:
-#     print("great grandchild")
-#     print(great)
