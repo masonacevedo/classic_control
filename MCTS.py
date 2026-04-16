@@ -129,14 +129,6 @@ def initializeTree(initial_state: GameState):
         new_node = Node(resulting_state, parent = root_node)
         root_node.child_nodes.append(new_node)
     
-    rng = np.random.default_rng()
-    for node in root_node.child_nodes:
-        result = rollout(node, rng)
-        node.times_visited = 1
-        node.total_reward = result
-        root_node.total_reward += result
-        root_node.times_visited += 1
-    
     return root_node
 
 def rollout(node: Node, rng):
@@ -176,7 +168,7 @@ for i in range(0,3):
     for j in range(0,3):
         child0 = result.child_nodes[i]
         childrenOfChild0Total = sum([n.times_visited for n in child0.child_nodes])
-        assert(child0.times_visited == childrenOfChild0Total+2)
+        assert(child0.times_visited == childrenOfChild0Total+1)
 
         grandchild00 = child0.child_nodes[j]
         greatGrandChildrenTotal = sum([n.times_visited for n in grandchild00.child_nodes])
