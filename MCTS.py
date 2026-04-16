@@ -1,6 +1,8 @@
 import numpy as np
 from TicTacToe import TicTacToe, GameState
 import time
+import matplotlib.pyplot as plt
+
 
 C = np.sqrt(2)
 
@@ -31,7 +33,7 @@ class Node:
         return ans
         
 
-def runMCTS():
+def runMCTS(t):
     
     initial_state = GameState()
     root_node = initializeTree(initial_state)
@@ -42,7 +44,7 @@ def runMCTS():
     # run algorithm for 1 second, just as a starting point.
     # print("root_node")
     # print(root_node)
-    while time.time() - start_time < 1:
+    while time.time() - start_time < t:
         leaf_node = descendTree(root_node)
         # print("leaf_node before backprop:")
         # print(leaf_node)
@@ -114,6 +116,7 @@ def performBackpropagation(node, result):
     while node.parent:
         node.total_reward += result
         node.times_visited += 1
+        result *= -1
         node = node.parent
     
     node.times_visited += 1
@@ -158,10 +161,22 @@ def rollout(node: Node, rng):
 
 
 
-result = runMCTS()
 
-# rng = np.random.default_rng()
-print("result:", result)
+
+avg_rewards = []
+t_values = list(range(1,25))
+for t in t_values:
+    result_node = runMCTS(t)
+    avg_reward = result_node.total_reward/result_node.times_visited
+    avg_rewards.append(avg_reward)
+    print("Monte carlo for", t, "seconds complete.")
+    print(t, ":", avg_reward)
+    print()
+
+plt.plot(t_values, avg_rewards)
+plt.show()
+
+result = runMCTS(1)
 
 childrenTotal = sum([n.times_visited for n in result.child_nodes])
 assert(result.times_visited == childrenTotal)
