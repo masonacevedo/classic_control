@@ -2,6 +2,8 @@ import numpy as np
 from TicTacToe import TicTacToe, GameState, Board
 import time
 import matplotlib.pyplot as plt
+import pickle
+import os
 
 
 C = 2*np.sqrt(2)
@@ -32,19 +34,8 @@ class Node:
         return ans
         
 
-def runMCTS(t):
+def runMCTS(initial_state, t):
     
-    # custom_tiles = \
-    # [
-    #     ["x", "o", "*"],
-    #     ["*", "x", "x"],
-    #     ["*", "*", "o"]
-    # ]
-
-    # custom_board = Board(custom_tiles)
-
-    # initial_state = GameState(whoseTurn="o", board=custom_board)
-    initial_state = GameState()
     root_node = initializeTree(initial_state)
 
     start_time = time.time()
@@ -151,27 +142,34 @@ def rollout(node: Node, rng):
         return -1
 
 
+custom_tiles = \
+[
+    ["*", "*", "*"],
+    ["*", "x", "*"],
+    ["*", "*", "*"]
+]
+whoseTurn = "o"
+
+custom_board = Board(custom_tiles)
+initial_state = GameState(whoseTurn, board=custom_board)
 
 
-result = runMCTS(10)
-print("starting board:")
-print(result)
-print("average reward:", result.total_reward/result.times_visited)
-print()
-for child in result.child_nodes:
+
+file_name = "result.pkl"
+if os.path.exists(file_name):
+    with open(file_name, "rb") as f:
+        result = pickle.load(f)
+else:
+    result = runMCTS(initial_state, 30)
+    with open(file_name, "wb") as f:
+        pickle.dump(result, f)
+
+
+child = result.child_nodes[0]
+grandchild = child.child_nodes[0]
+great = grandchild.child_nodes[-2]
+for c in great.child_nodes:
     print("next move:")
-    print(child)
-    print("average reward:", child.total_reward/child.times_visited)
+    print(c)
+    print("average reward:", c.total_reward/c.times_visited)
     print()
-
-childrenTotal = sum([n.times_visited for n in result.child_nodes])
-assert(result.times_visited == childrenTotal)
-
-for i in range(0,3):
-    for j in range(0,3):
-        child0 = result.child_nodes[i]
-        childrenOfChild0Total = sum([n.times_visited for n in child0.child_nodes])
-        assert(child0.times_visited == childrenOfChild0Total+1)
-
-        grandchild00 = child0.child_nodes[j]
-        greatGrandChildrenTotal = sum([n.times_visited for n in grandchild00.child_nodes])
