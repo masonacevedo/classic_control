@@ -9,16 +9,16 @@ import torch
 
 
 C = 2*np.sqrt(2)
+# Now, for training: 
+#    we do a bunch of self-play, and generate a bunch of tuples of the form
+#    (state, MCTS policy, outcome)
+# Then, we compute the loss as: 
+#    1. the difference between the predicted policy from the network and the MCTS policy
+#    2. the difference between the predicted value from the network and the outcome! 
+#    3. the log of this? maybe? 
 
-# MCTS algorithm: 
-    #     Build Tree. 
-    #     
-    #     Start at root of Tree, descend nodes according to selection rule until
-    #     hitting either a leaf node (state who's decisions have not been explored).
-    #     If terminal node, done.
-    #     If leaf node, then perform rollout. 
-    #     Record result at lowest layer of tree, then perform backpropagation upward. 
-
+# TODO: 
+#   stop using rollouts! and start using value predictions from the neural network
 
 # Convention:
 # 0 index in output tensor - top left
@@ -181,31 +181,6 @@ def initializeTree(initial_state: GameState):
         root_node.child_nodes.append(new_node)
     
     return root_node
-
-def rollout(node: Node, rng):
-
-    state = node.game_state
-
-    original_player = state.whoseTurn
-    # performs a rollout by playing random moves until the game ends, 
-    # then reports result
-    
-    
-    legal_moves = TicTacToe.get_legal_moves(state)
-    is_over, winner = TicTacToe.is_over(state)
-    while len(legal_moves) > 0 and not(is_over):
-        move_to_perform = rng.choice(legal_moves)
-        state = TicTacToe.apply_move(state, move_to_perform)
-        legal_moves = TicTacToe.get_legal_moves(state)
-        is_over, winner = TicTacToe.is_over(state)
-    
-
-    if winner == None:
-        return 0
-    elif winner == original_player:
-        return 1
-    else:
-        return -1
 
 
 
