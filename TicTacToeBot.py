@@ -9,13 +9,19 @@ class TicTacToeBot(nn.Module):
         self.linear2 = nn.Linear(20, 20, bias=True)
 
         # value head
-        self.value_head = nn.linear(20, 1, bias=True)
+        self.value_head = nn.Linear(20, 1, bias=True)
 
         # poilcy head
         self.policy_head = nn.Linear(20, 9, bias=True)
     
     def forward(self, x):
-        x = torch.tensor(x)
+        # print("x:", x)
+        # input()
+
+        # x = torch.tensor(x)
+
+        x = x.view(18)
+
         
         x = self.linear1(x)
         x = torch.relu(x)
@@ -24,10 +30,9 @@ class TicTacToeBot(nn.Module):
         x = torch.relu(x)
 
         value = self.value_head(x)
-        value = torch.relu(value)
+        value = torch.tanh(value)
 
         policy = self.policy_head(x)
-        policy = torch.relu(policy)
 
         return value, policy
         

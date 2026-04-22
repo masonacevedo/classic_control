@@ -4,6 +4,8 @@ import time
 import matplotlib.pyplot as plt
 import pickle
 import os
+from TicTacToeBot import TicTacToeBot
+import torch
 
 
 C = 2*np.sqrt(2)
@@ -16,6 +18,19 @@ C = 2*np.sqrt(2)
     #     If terminal node, done.
     #     If leaf node, then perform rollout. 
     #     Record result at lowest layer of tree, then perform backpropagation upward. 
+
+
+# Convention:
+# 0 index in output tensor - top left
+# 1 index in output tensor - top mid
+# 2 index in output tensor - top right
+# 3 index in output tensor - mid left
+# 4 index in output tensor - mid mid
+# 5 index in output tensor - mid right
+# 6 index in output tensor - bot left
+# 7 index in output tensor - bot mid
+# 8 index in output tensor - bot right
+
 
 class Node:
     def __init__(self, game_state, total_reward = 0, times_visited = 0, parent = None, child_nodes=None):
@@ -34,7 +49,7 @@ class Node:
         return ans
         
 
-def runMCTS(initial_state, t):
+def runMCTS(agent, initial_state, t):
     
     root_node = initializeTree(initial_state)
 
@@ -42,7 +57,7 @@ def runMCTS(initial_state, t):
     
     rng = np.random.default_rng()
     while time.time() - start_time < t:
-        leaf_node = descendTree(root_node)
+        leaf_node = descendTree(agent, root_node)
         result = rollout(leaf_node, rng)
         performBackpropagation(leaf_node, result)
 
@@ -50,24 +65,27 @@ def runMCTS(initial_state, t):
     return root_node
 
 
-def descendTree(node):
+def descendTree(agent, node):
 
     initial_node = node
     children = initial_node.child_nodes
-    current_node = selectChild(children)
+    current_node = selectChild(agent, initial_node, children)
 
 
     while current_node.child_nodes != [] and not(current_node.game_state.is_over()[0]):
         children = current_node.child_nodes
-        current_node = selectChild(children)
+        current_node = selectChild(agent, current_node, children)
     
     return current_node
     
 
-def selectChild(nodes):
-    scores = []
+def selectChild(agent, parent_node, child_nodes):
 
-    for node in nodes:
+    scores = []
+    parent_position = parent_node.game_state
+    evaluation = neural_evaluation(agent, parent_position)
+
+    for node in child_nodes:
         if node.times_visited == 0:
             scores.append(float('inf'))
         else:
@@ -81,7 +99,55 @@ def selectChild(nodes):
             scores.append(score)
     
     maxScoreIndex = scores.index(max(scores))
-    return nodes[maxScoreIndex]
+    return child_nodes[maxScoreIndex]
+
+moves_to_indices = {
+    (0,0): 0,
+    (0,1): 1,
+    (0,2): 2,
+    (1,0): 3,
+    (1,1): 4,
+    (1,2): 5,
+    (2,0): 6,
+    (2,1): 7,
+    (2,2): 8
+}
+all_moves = [(row, col) for row in range(0,3) for col in range(0,3)]
+def neural_evaluation(agent, game_state):
+    state_as_tensor = state_to_tensor(game_state)
+
+    value, policy_logits = agent.forward(state_as_tensor)
+    # print("value:", value)
+    # print("policy_logits:", policy_logits)
+    # input()
+    # print("policy_logits:", policy_logits)
+    # print("policy_logits.shape:", policy_logits.shape)
+    # print("policy_logits[0]:", policy_logits[0])
+    # print("policy_logits[1]:", policy_logits[1])
+    # print("policy_logits[2]:", policy_logits[2])
+    # input()
+
+    legal_moves = TicTacToe.get_legal_moves(game_state)
+    for move in all_moves:
+        if not(move in legal_moves):
+            index_to_mask = moves_to_indices[move]
+            policy_logits[index_to_mask] = float('-inf')
+    
+    probabilities = torch.softmax(policy_logits, dim=0)
+    return value, probabilities
+
+def state_to_tensor(game_state):
+    tiles = game_state.board.tiles
+    opponent = "o" if game_state.whoseTurn == "x" else "x"
+    # numpy arrays are faster than python lists!
+    tiles = np.array(tiles)
+
+    their_pieces = torch.tensor(tiles == game_state.whoseTurn, dtype = torch.float32)
+    my_pieces = torch.tensor(tiles == opponent, dtype = torch.float32)
+    ans = torch.stack([my_pieces, their_pieces], dim=0)
+    # print('ans:', ans)
+    return ans
+
 
 def performBackpropagation(node, result):
     game_over, winner = node.game_state.is_over()
@@ -141,32 +207,24 @@ def rollout(node: Node, rng):
     else:
         return -1
 
-initial_state = GameState()
-# custom_tiles = \
-# [
-#     ["*", "*", "x"],
-#     ["*", "*", "*"],
-#     ["o", "*", "*"]
-# ]
-# whoseTurn = "x"
-# custom_board = Board(custom_tiles)
-# initial_state = GameState(whoseTurn, board=custom_board)
 
 
-file_name = "result.pkl"
-if os.path.exists(file_name):
-    with open(file_name, "rb") as f:
-        result = pickle.load(f)
-else:
 
-    result = runMCTS(initial_state, 30)
-    with open(file_name, "wb") as f:
-        pickle.dump(result, f)
+custom_tiles = \
+[
+    ["*", "o", "x"],
+    ["*", "*", "*"],
+    ["*", "*", "*"]
+]
+whoseTurn = "x"
+custom_board = Board(custom_tiles)
+initial_state = GameState(whoseTurn, board=custom_board)
+# initial_state = GameState()
 
-print("Optimal Tic-Tac-Toe game:")
-print("initial state:")
-print(initial_state)
-print("\n\n")
+agent = TicTacToeBot()
+result = runMCTS(agent, initial_state, 10)
+
+
 
 current_node = result
 current_state = current_node.game_state
