@@ -15,10 +15,6 @@ class TicTacToeBot(nn.Module):
         self.policy_head = nn.Linear(20, 9, bias=True)
     
     def forward(self, x):
-        # print("x:", x)
-        # input()
-
-        # x = torch.tensor(x)
 
         x = x.view(18)
 
