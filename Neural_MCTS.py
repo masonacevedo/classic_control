@@ -33,12 +33,14 @@ C = 2*np.sqrt(2)
 
 
 class Node:
-    def __init__(self, game_state, total_reward = 0, times_visited = 0, parent = None, child_nodes=None):
+    def __init__(self, game_state, total_reward = 0, times_visited = 0, parent = None, child_nodes=None, most_recent_move=None, learned_p_score=None):
         self.game_state = game_state
         self.total_reward = total_reward
         self.times_visited = times_visited
         self.parent = parent
         self.child_nodes = [child_nodes] if child_nodes is not None else []
+        self.most_recent_move = most_recent_move
+        self.learned_p_score = learned_p_score
     
     def __repr__(self):
         ans = ""
@@ -46,6 +48,7 @@ class Node:
         ans += "total_reward:" + str(self.total_reward) + "\n"
         ans += "times_visited:" + str(self.times_visited) + "\n"
         ans += "child_nodes:" + str(len(self.child_nodes)) + "\n"
+        ans += "learned_p_score:" + str(self.learned_p_score) + "\n"
         return ans
         
 
@@ -57,8 +60,32 @@ def runMCTS(agent, initial_state, t):
     
     rng = np.random.default_rng()
     while time.time() - start_time < t:
+
         leaf_node = descendTree(agent, root_node)
-        result = rollout(leaf_node, rng)
+        # print("leaf node found:")
+        # print(leaf_node)
+        # input()
+        
+        is_over, winner = leaf_node.game_state.is_over()
+
+        if is_over:
+            result = 1 if winner == leaf_node.game_state.whoseTurn else -1
+        else:
+            value, probabilities = neural_evaluation(agent, leaf_node.game_state)
+            result = value
+
+            # if we hit a leaf node that isn't the end of the game,
+            # we create new nodes out of it's children to expand the tree. 
+            legal_moves = TicTacToe.get_legal_moves(leaf_node.game_state)
+            for move in legal_moves:
+                resulting_state = TicTacToe.apply_move(leaf_node.game_state, move)
+                learned_p_score = probabilities[moves_to_indices[move]]
+                new_node = Node(resulting_state, parent = leaf_node, most_recent_move=move, learned_p_score=learned_p_score)
+                leaf_node.child_nodes.append(new_node)
+                # print("created node:")
+                # print(new_node)
+                # input("enter to continue")
+
         performBackpropagation(leaf_node, result)
 
     
@@ -82,9 +109,6 @@ def descendTree(agent, node):
 def selectChild(agent, parent_node, child_nodes):
 
     scores = []
-    parent_position = parent_node.game_state
-    evaluation = neural_evaluation(agent, parent_position)
-
     for node in child_nodes:
         if node.times_visited == 0:
             scores.append(float('inf'))
@@ -93,7 +117,8 @@ def selectChild(agent, parent_node, child_nodes):
             n_p = node.parent.times_visited
             exploit_term = node.total_reward/n_i
             
-            explore_term = C * np.sqrt(np.log(n_p)/n_i)
+            learned_probability = node.learned_p_score
+            explore_term = C * learned_probability * np.sqrt(np.log(n_p)/n_i)
             score = exploit_term + explore_term
 
             scores.append(score)
@@ -152,14 +177,6 @@ def state_to_tensor(game_state):
 def performBackpropagation(node, result):
     game_over, winner = node.game_state.is_over()
     result *= -1
-    
-    
-    if not(game_over):
-        legal_moves = TicTacToe.get_legal_moves(node.game_state)
-        for move in legal_moves:
-            resulting_state = TicTacToe.apply_move(node.game_state, move)
-            new_node = Node(resulting_state, parent = node)
-            node.child_nodes.append(new_node)
 
     while node.parent:
         node.total_reward += result
@@ -175,9 +192,12 @@ def initializeTree(initial_state: GameState):
     root_node = Node(initial_state)
     legal_moves = TicTacToe.get_legal_moves(initial_state)
 
+    value, probabilities = neural_evaluation(agent, root_node.game_state)
+
     for move in legal_moves:
         resulting_state = TicTacToe.apply_move(root_node.game_state, move)
-        new_node = Node(resulting_state, parent = root_node)
+        learned_p_score = probabilities[moves_to_indices[move]]
+        new_node = Node(resulting_state, parent = root_node, most_recent_move=move, learned_p_score=learned_p_score)
         root_node.child_nodes.append(new_node)
     
     return root_node
@@ -187,8 +207,8 @@ def initializeTree(initial_state: GameState):
 
 custom_tiles = \
 [
-    ["*", "o", "x"],
-    ["*", "*", "*"],
+    ["*", "*", "x"],
+    ["*", "*", "o"],
     ["*", "*", "*"]
 ]
 whoseTurn = "x"
@@ -197,7 +217,7 @@ initial_state = GameState(whoseTurn, board=custom_board)
 # initial_state = GameState()
 
 agent = TicTacToeBot()
-result = runMCTS(agent, initial_state, 10)
+result = runMCTS(agent, initial_state, 30)
 
 
 
@@ -210,10 +230,7 @@ while current_node.child_nodes:
     best_child_index = child_scores.index(max(child_scores))
     best_child = current_node.child_nodes[best_child_index]
     current_node = best_child
-
     print(current_state.board)
-    print()
-    print()
 
 current_state = current_node.game_state
 print(current_state.board)
