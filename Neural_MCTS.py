@@ -12,6 +12,11 @@ C = 2*np.sqrt(2)
 # Now, for training: 
 #    we do a bunch of self-play, and generate a bunch of tuples of the form
 #    (state, MCTS policy, outcome)
+#    in order to do self-play, we do the following:
+#       run MCTS for a certain number of simulations
+#       look at the child nodes of the root node of the resulting tree
+#       the number of visits to those child nodes gives us a probability
+#       distribution over the moves. We sample from that distribution.
 # Then, we compute the loss as: 
 #    1. the difference between the predicted policy from the network and the MCTS policy
 #    2. the difference between the predicted value from the network and the outcome! 
@@ -38,14 +43,14 @@ class Node:
         return ans
         
 
-def runMCTS(agent, initial_state, t):
+def runMCTS(agent, initial_state, num_simulations):
     
     root_node = initializeTree(initial_state)
 
     start_time = time.time()
     
     rng = np.random.default_rng()
-    while time.time() - start_time < t:
+    for _ in range(0, num_simulations):
 
         leaf_node = descendTree(agent, root_node)
         
@@ -102,7 +107,6 @@ def selectChild(agent, parent_node, child_nodes):
             score = exploit_term + explore_term
 
             scores.append(score)
-    
     maxScoreIndex = scores.index(max(scores))
     return child_nodes[maxScoreIndex]
 
@@ -176,6 +180,7 @@ def initializeTree(initial_state: GameState):
 
 
 
+
 custom_tiles = \
 [
     ["*", "*", "x"],
@@ -188,7 +193,7 @@ initial_state = GameState(whoseTurn, board=custom_board)
 # initial_state = GameState()
 
 agent = TicTacToeBot()
-result = runMCTS(agent, initial_state, 30)
+result = runMCTS(agent, initial_state, 10000)
 
 
 
