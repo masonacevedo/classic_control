@@ -43,9 +43,19 @@ class Node:
         return ans
         
 
-def runMCTS(agent, initial_state, num_simulations):
+def runMCTS(agent, num_simulations, *, initial_state = None, root_node = None):
+
+    if root_node and initial_state:
+        raise Exception("runMCTS() requires ONE of initial_state or root_node, but BOTH were provided.")
+    elif not(root_node) and not(initial_state):
+        raise Exception("runMCTS() requires ONE of initial_state or root_node, but NEITHER were provided.")
+
     
-    root_node = initializeTree(initial_state)
+    if initial_state and not(root_node):
+        root_node = initializeTree(initial_state)
+    elif not(initial_state) and root_node:
+        pass
+
     for _ in range(0, num_simulations):
 
         leaf_node = descendTree(agent, root_node)
@@ -174,35 +184,103 @@ def initializeTree(initial_state: GameState):
     return root_node
 
 
+def self_play(agent, initial_state, num_simulations=100):
+
+    results = []
+    current_node = initializeTree(initial_state)
+    current_state = current_node.game_state
+    is_over, winner = current_state.is_over()
+
+    rng = np.random.default_rng()
+    while not(is_over):
+        current_node = runMCTS(agent, num_simulations, root_node = current_node)
+
+        visit_counts = [node.times_visited for node in current_node.child_nodes]
+        total_visits = sum(visit_counts)
+        probabilities = [v/total_visits for v in visit_counts]
+        policy = {node.most_recent_move: p for p, node in zip(probabilities, current_node.child_nodes)}
+
+        new_triplet = [current_node.game_state, policy, "unknown"]
+        results.append(new_triplet)
+
+        moves_made = [node.most_recent_move for node in current_node.child_nodes]
+        sampled_node = rng.choice(current_node.child_nodes, size=1, p=probabilities)[0]
+
+        current_node = sampled_node
+        current_state = current_node.game_state
+
+
+        is_over, winner = current_state.is_over()
+
+    visit_counts = [node.times_visited for node in current_node.child_nodes]
+    total_visits = sum(visit_counts)
+    probabilities = [v/total_visits for v in visit_counts]
+    policy = {node.most_recent_move: p for p, node in zip(probabilities, current_node.child_nodes)}
+    new_triplet = [current_node.game_state, policy, "unknown"]
+    results.append(new_triplet)
+
+
+    if winner == "x":
+        result_number = 1
+    elif winner == "o":
+        result_number = -1
+    else:
+        result_number = 0
+
+    for i in range(0, len(results)):
+        triplet = results[i]
+        triplet[2] = result_number
+        result_number *= -1
+
+
+    return results
 
 
 
-custom_tiles = \
+
+t = \
 [
-    ["*", "*", "x"],
-    ["*", "*", "o"],
+    ["*", "*", "*"],
+    ["*", "*", "*"],
     ["*", "*", "*"]
 ]
 whoseTurn = "x"
-custom_board = Board(custom_tiles)
+custom_board = Board(t)
 initial_state = GameState(whoseTurn, board=custom_board)
+agent = TicTacToeBot()
+self_play(agent, initial_state, num_simulations=100)
+
+
+
+
+
+
+# custom_tiles = \
+# [
+#     ["*", "*", "x"],
+#     ["*", "*", "o"],
+#     ["*", "*", "*"]
+# ]
+# whoseTurn = "x"
+# custom_board = Board(custom_tiles)
+# initial_state = GameState(whoseTurn, board=custom_board)
 # initial_state = GameState()
 
-agent = TicTacToeBot()
-result = runMCTS(agent, initial_state, 100)
+# agent = TicTacToeBot()
+# result = runMCTS(agent, initial_state, 100)
 
 
 
-current_node = result
-current_state = current_node.game_state
-while current_node.child_nodes:
-    current_state = current_node.game_state
+# current_node = result
+# current_state = current_node.game_state
+# while current_node.child_nodes:
+#     current_state = current_node.game_state
 
-    child_scores = [node.times_visited for node in current_node.child_nodes]
-    best_child_index = child_scores.index(max(child_scores))
-    best_child = current_node.child_nodes[best_child_index]
-    current_node = best_child
-    print(current_state.board)
+#     child_scores = [node.times_visited for node in current_node.child_nodes]
+#     best_child_index = child_scores.index(max(child_scores))
+#     best_child = current_node.child_nodes[best_child_index]
+#     current_node = best_child
+#     print(current_state.board)
 
-current_state = current_node.game_state
-print(current_state.board)
+# current_state = current_node.game_state
+# print(current_state.board)
