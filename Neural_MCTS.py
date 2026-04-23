@@ -46,10 +46,6 @@ class Node:
 def runMCTS(agent, initial_state, num_simulations):
     
     root_node = initializeTree(initial_state)
-
-    start_time = time.time()
-    
-    rng = np.random.default_rng()
     for _ in range(0, num_simulations):
 
         leaf_node = descendTree(agent, root_node)
@@ -193,7 +189,7 @@ initial_state = GameState(whoseTurn, board=custom_board)
 # initial_state = GameState()
 
 agent = TicTacToeBot()
-result = runMCTS(agent, initial_state, 10000)
+result = runMCTS(agent, initial_state, 100)
 
 
 
