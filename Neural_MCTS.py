@@ -52,7 +52,7 @@ def runMCTS(agent, num_simulations, *, initial_state = None, root_node = None):
 
     
     if initial_state and not(root_node):
-        root_node = initializeTree(initial_state)
+        root_node = initializeTree(agent, initial_state)
     elif not(initial_state) and root_node:
         pass
 
@@ -168,7 +168,7 @@ def performBackpropagation(node, result):
     node.times_visited += 1
     node.total_reward += result
 
-def initializeTree(initial_state: GameState):
+def initializeTree(agent, initial_state: GameState):
 
     root_node = Node(initial_state)
     legal_moves = TicTacToe.get_legal_moves(initial_state)
@@ -184,10 +184,10 @@ def initializeTree(initial_state: GameState):
     return root_node
 
 
-def self_play(agent, initial_state, num_simulations=100):
+def self_play(agent, initial_state, num_simulations):
 
     results = []
-    current_node = initializeTree(initial_state)
+    current_node = initializeTree(agent, initial_state)
     current_state = current_node.game_state
     is_over, winner = current_state.is_over()
 
@@ -212,14 +212,6 @@ def self_play(agent, initial_state, num_simulations=100):
 
         is_over, winner = current_state.is_over()
 
-    visit_counts = [node.times_visited for node in current_node.child_nodes]
-    total_visits = sum(visit_counts)
-    probabilities = [v/total_visits for v in visit_counts]
-    policy = {node.most_recent_move: p for p, node in zip(probabilities, current_node.child_nodes)}
-    new_triplet = [current_node.game_state, policy, "unknown"]
-    results.append(new_triplet)
-
-
     if winner == "x":
         result_number = 1
     elif winner == "o":
@@ -237,22 +229,28 @@ def self_play(agent, initial_state, num_simulations=100):
 
 
 
+def train(num_games_self_play, num_simulations):
 
-t = \
-[
-    ["*", "*", "*"],
-    ["*", "*", "*"],
-    ["*", "*", "*"]
-]
-whoseTurn = "x"
-custom_board = Board(t)
-initial_state = GameState(whoseTurn, board=custom_board)
-agent = TicTacToeBot()
-self_play(agent, initial_state, num_simulations=100)
+    t = \
+    [
+        ["*", "*", "*"],
+        ["*", "*", "*"],
+        ["*", "*", "*"]
+    ]
+    whoseTurn = "x"
+    custom_board = Board(t)
+    initial_state = GameState(whoseTurn, board=custom_board)
+    agent = TicTacToeBot()
+
+    training_data = []
+    for _ in range(0, num_games_self_play):
+        training_data += self_play(agent, initial_state, num_simulations=num_simulations)
+
+    print("len(training_data):", len(training_data))
+    return training_data
 
 
-
-
+train(10, 50)
 
 
 # custom_tiles = \
