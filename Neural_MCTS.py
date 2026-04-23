@@ -17,20 +17,6 @@ C = 2*np.sqrt(2)
 #    2. the difference between the predicted value from the network and the outcome! 
 #    3. the log of this? maybe? 
 
-# TODO: 
-#   stop using rollouts! and start using value predictions from the neural network
-
-# Convention:
-# 0 index in output tensor - top left
-# 1 index in output tensor - top mid
-# 2 index in output tensor - top right
-# 3 index in output tensor - mid left
-# 4 index in output tensor - mid mid
-# 5 index in output tensor - mid right
-# 6 index in output tensor - bot left
-# 7 index in output tensor - bot mid
-# 8 index in output tensor - bot right
-
 
 class Node:
     def __init__(self, game_state, total_reward = 0, times_visited = 0, parent = None, child_nodes=None, most_recent_move=None, learned_p_score=None):
@@ -62,9 +48,6 @@ def runMCTS(agent, initial_state, t):
     while time.time() - start_time < t:
 
         leaf_node = descendTree(agent, root_node)
-        # print("leaf node found:")
-        # print(leaf_node)
-        # input()
         
         is_over, winner = leaf_node.game_state.is_over()
 
@@ -82,9 +65,6 @@ def runMCTS(agent, initial_state, t):
                 learned_p_score = probabilities[moves_to_indices[move]]
                 new_node = Node(resulting_state, parent = leaf_node, most_recent_move=move, learned_p_score=learned_p_score)
                 leaf_node.child_nodes.append(new_node)
-                # print("created node:")
-                # print(new_node)
-                # input("enter to continue")
 
         performBackpropagation(leaf_node, result)
 
@@ -142,15 +122,6 @@ def neural_evaluation(agent, game_state):
     state_as_tensor = state_to_tensor(game_state)
 
     value, policy_logits = agent.forward(state_as_tensor)
-    # print("value:", value)
-    # print("policy_logits:", policy_logits)
-    # input()
-    # print("policy_logits:", policy_logits)
-    # print("policy_logits.shape:", policy_logits.shape)
-    # print("policy_logits[0]:", policy_logits[0])
-    # print("policy_logits[1]:", policy_logits[1])
-    # print("policy_logits[2]:", policy_logits[2])
-    # input()
 
     legal_moves = TicTacToe.get_legal_moves(game_state)
     for move in all_moves:
