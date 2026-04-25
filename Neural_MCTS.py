@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 from TicTacToeBot import TicTacToeBot
+
 import torch
+import torch.nn as nn
 
 
 C = 2*np.sqrt(2)
@@ -65,7 +67,7 @@ def runMCTS(agent, num_simulations, *, initial_state = None, root_node = None):
         if is_over:
             result = 1 if winner == leaf_node.game_state.whoseTurn else -1
         else:
-            value, probabilities = neural_evaluation(agent, leaf_node.game_state)
+            value, probabilities = neural_evaluation_probabilities(agent, leaf_node.game_state)
             result = value
 
             # if we hit a leaf node that isn't the end of the game,
@@ -127,8 +129,21 @@ moves_to_indices = {
     (2,1): 7,
     (2,2): 8
 }
+
+indices_to_moves = {
+    0: (0,0),
+    1: (0,1),
+    2: (0,2),
+    3: (1,0),
+    4: (1,1),
+    5: (1,2),
+    6: (2,0),
+    7: (2,1),
+    8: (2,2)
+}
+
 all_moves = [(row, col) for row in range(0,3) for col in range(0,3)]
-def neural_evaluation(agent, game_state):
+def neural_evaluation_probabilities(agent, game_state):
     state_as_tensor = state_to_tensor(game_state)
 
     value, policy_logits = agent.forward(state_as_tensor)
@@ -141,6 +156,19 @@ def neural_evaluation(agent, game_state):
     
     probabilities = torch.softmax(policy_logits, dim=0)
     return value, probabilities
+
+def neural_evaluation_logits(agent, game_state):
+    state_as_tensor = state_to_tensor(game_state)
+
+    value, policy_logits = agent.forward(state_as_tensor)
+
+    # legal_moves = TicTacToe.get_legal_moves(game_state)
+    # for move in all_moves:
+    #     if not(move in legal_moves):
+    #         index_to_mask = moves_to_indices[move]
+    #         policy_logits[index_to_mask] = float('-inf')
+
+    return value, policy_logits
 
 def state_to_tensor(game_state):
     tiles = game_state.board.tiles
@@ -173,7 +201,7 @@ def initializeTree(agent, initial_state: GameState):
     root_node = Node(initial_state)
     legal_moves = TicTacToe.get_legal_moves(initial_state)
 
-    value, probabilities = neural_evaluation(agent, root_node.game_state)
+    value, probabilities = neural_evaluation_probabilities(agent, root_node.game_state)
 
     for move in legal_moves:
         resulting_state = TicTacToe.apply_move(root_node.game_state, move)
@@ -195,12 +223,23 @@ def self_play(agent, initial_state, num_simulations):
     while not(is_over):
         current_node = runMCTS(agent, num_simulations, root_node = current_node)
 
-        visit_counts = [node.times_visited for node in current_node.child_nodes]
-        total_visits = sum(visit_counts)
-        probabilities = [v/total_visits for v in visit_counts]
-        policy = {node.most_recent_move: p for p, node in zip(probabilities, current_node.child_nodes)}
+        visit_counts = [(node.most_recent_move, node.times_visited) for node in current_node.child_nodes]
+        total_visits = sum([pair[1] for pair in visit_counts])
+        probability_tuples = [(pair[0], pair[1]/total_visits) for pair in visit_counts]
 
-        new_triplet = [current_node.game_state, policy, "unknown"]
+        probabilities = [t[-1] for t in probability_tuples]
+        
+        policy = {node.most_recent_move: p for p, node in zip(probabilities, current_node.child_nodes)}
+        formatted_policy = []
+        for i in range(0, 9):
+            move = indices_to_moves[i]
+            if move in policy:
+                prob = policy[move]
+                formatted_policy.append(prob)
+            else:
+                formatted_policy.append(0)
+
+        new_triplet = [current_node.game_state, formatted_policy, "unknown"]
         results.append(new_triplet)
 
         moves_made = [node.most_recent_move for node in current_node.child_nodes]
@@ -229,7 +268,8 @@ def self_play(agent, initial_state, num_simulations):
 
 
 
-def train(num_games_self_play, num_simulations):
+
+def generate_training_data(agent, num_games_self_play, num_simulations):
 
     t = \
     [
@@ -240,18 +280,44 @@ def train(num_games_self_play, num_simulations):
     whoseTurn = "x"
     custom_board = Board(t)
     initial_state = GameState(whoseTurn, board=custom_board)
-    agent = TicTacToeBot()
 
     training_data = []
     for _ in range(0, num_games_self_play):
         training_data += self_play(agent, initial_state, num_simulations=num_simulations)
 
-    print("len(training_data):", len(training_data))
     return training_data
 
+# a = TicTacToeBot()
+# generate_training_data(a, 10, 50)
+learning_rate = 0.0001
+def train(loss_factor = 1):
+    
 
-train(10, 50)
+    agent = TicTacToeBot()
+    optimizer = torch.optim.Adam(agent.parameters(), lr = learning_rate)
 
+    num_epochs = 100
+    for epoch in range(0, num_epochs):
+        training_data = generate_training_data(agent, 10, 1000)
+        for triplet in training_data:
+
+            optimizer.zero_grad()
+
+            state, mcts_policy, outcome = triplet
+            mcts_policy = torch.tensor(mcts_policy, dtype = torch.float32)
+            
+            value, neural_logits = neural_evaluation_logits(agent, state)
+            value_loss = (value - outcome) ** 2
+            policy_loss = nn.CrossEntropyLoss()(neural_logits, mcts_policy)
+            total_loss = (value_loss + policy_loss)
+            print("total_loss:", total_loss)
+            total_loss.backward()
+            optimizer.step()
+        print("epoch:", epoch, " | total_loss:", total_loss)
+        input()
+        
+
+train()
 
 # custom_tiles = \
 # [
