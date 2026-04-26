@@ -249,13 +249,14 @@ def train(simulations_per_move, games_played_per_batch, loss_factor = 1, num_epo
     for epoch in range(0, num_epochs):
 
         training_buffer += generate_training_data(agent, games_played_per_batch, simulations_per_move)
-        triplet_index = np.random.randint(len(training_buffer))
-        triplet = training_buffer[triplet_index]
 
         for _ in range(0, train_steps_per_iteration):
             optimizer.zero_grad()
 
+            triplet_index = np.random.randint(len(training_buffer))
+            triplet = training_buffer[triplet_index]
             state, mcts_policy, outcome = triplet
+
             mcts_policy = torch.tensor(mcts_policy, dtype = torch.float32)
             
             value, neural_logits = neural_evaluation_logits(agent, state)
@@ -267,6 +268,10 @@ def train(simulations_per_move, games_played_per_batch, loss_factor = 1, num_epo
             optimizer.step()
         print("epoch:", epoch, " | total_loss:", total_loss)
         
-
-train(20, 10)
-
+train(
+    simulations_per_move=50,
+    games_played_per_batch=100,
+    num_epochs=200,
+    learning_rate=0.001,
+    train_steps_per_iteration=200
+)
