@@ -62,10 +62,13 @@ def runMCTS(agent, num_simulations, *, initial_state = None, root_node = None):
         is_over, winner = leaf_node.game_state.is_over()
 
         if is_over:
-            result = 1 if winner == leaf_node.game_state.whoseTurn else -1
+            if winner is None:
+                result = 0
+            else:
+                result = 1 if winner == leaf_node.game_state.whoseTurn else -1
         else:
             value, probabilities = neural_evaluation_probabilities(agent, leaf_node.game_state)
-            result = value
+            result = value.item()
 
             legal_moves = TicTacToe.get_legal_moves(leaf_node.game_state)
             for move in legal_moves:
@@ -265,11 +268,14 @@ def train(weights_file_path, simulations_per_move, games_played_per_batch, loss_
             value, neural_logits = neural_evaluation_logits(agent, state)
             value_loss = (value - outcome) ** 2
             policy_loss = nn.CrossEntropyLoss()(neural_logits, mcts_policy)
-            total_loss = (value_loss + policy_loss)
+            total_loss = ((value_loss * loss_factor) + policy_loss)
             # print("total_loss:", total_loss)
             total_loss.backward()
             optimizer.step()
+        print("value_loss: ", value_loss)
+        print("policy_loss:", policy_loss)
         print("epoch:", epoch, " | total_loss:", total_loss)
+        print()
 
         if (epoch == 199) or (epoch % 10 == 0):
             torch.save(agent.state_dict(), weights_file_path.replace(".pth", "_epoch_" + str(epoch) + ".pth"))
@@ -303,12 +309,14 @@ def train(weights_file_path, simulations_per_move, games_played_per_batch, loss_
             print("probabilities:", probabilities)
             print()
 
-        
-train(
-    weights_file_path="tic_tac_toe_bot.pth",
-    simulations_per_move=50,
-    games_played_per_batch=100,
-    num_epochs=200,
-    learning_rate=0.001,
-    train_steps_per_iteration=200
-)
+
+if __name__ == "__main__":
+    train(
+        weights_file_path="tic_tac_toe_bot_v4.pth",
+        simulations_per_move=2000,
+        games_played_per_batch=20,
+        loss_factor=3,
+        num_epochs=200,
+        learning_rate=0.001,
+        train_steps_per_iteration=200
+    )
