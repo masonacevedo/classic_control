@@ -240,9 +240,12 @@ def generate_training_data(agent, num_games_self_play, num_simulations):
     return training_data
 
 
-def train(simulations_per_move, games_played_per_batch, loss_factor = 1, num_epochs=20, learning_rate=0.0001, train_steps_per_iteration=100):
+def train(weights_file_path, simulations_per_move, games_played_per_batch, loss_factor = 1, num_epochs=20, learning_rate=0.0001, train_steps_per_iteration=100):
 
     agent = TicTacToeBot()
+    if os.path.exists(weights_file_path):
+        agent.load_state_dict(torch.load(weights_file_path))
+
     optimizer = torch.optim.Adam(agent.parameters(), lr = learning_rate)
 
     training_buffer = deque(maxlen=10000)
@@ -267,8 +270,42 @@ def train(simulations_per_move, games_played_per_batch, loss_factor = 1, num_epo
             total_loss.backward()
             optimizer.step()
         print("epoch:", epoch, " | total_loss:", total_loss)
+
+        if (epoch == 199) or (epoch % 10 == 0):
+            torch.save(agent.state_dict(), weights_file_path.replace(".pth", "_epoch_" + str(epoch) + ".pth"))
+            t = \
+            [
+                ["*", "*", "*"],
+                ["*", "*", "*"],
+                ["*", "*", "*"]
+            ]
+            whoseTurn = "x"
+            custom_board = Board(t)
+            initial_state = GameState(whoseTurn, board=custom_board)
+            val, probabilities = neural_evaluation_probabilities(agent, initial_state)
+            print("empty board:")
+            print("val:", val)
+            print("probabilities:", probabilities)
+            print()
+
+            t = \
+            [
+                ["*", "o", "x"],
+                ["*", "*", "*"],
+                ["*", "*", "*"]
+            ]
+            whoseTurn = "x"
+            custom_board = Board(t)
+            initial_state = GameState(whoseTurn, board=custom_board)
+            val, probabilities = neural_evaluation_probabilities(agent, initial_state)
+            print("board where x is winning:")
+            print("val:", val)
+            print("probabilities:", probabilities)
+            print()
+
         
 train(
+    weights_file_path="tic_tac_toe_bot.pth",
     simulations_per_move=50,
     games_played_per_batch=100,
     num_epochs=200,
