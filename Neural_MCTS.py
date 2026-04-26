@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 from TicTacToeBot import TicTacToeBot
+from collections import deque
+
 
 import torch
 import torch.nn as nn
@@ -290,17 +292,22 @@ def generate_training_data(agent, num_games_self_play, num_simulations):
 # a = TicTacToeBot()
 # generate_training_data(a, 10, 50)
 learning_rate = 0.0001
+train_steps_per_iteration = 100
 def train(loss_factor = 1):
     
 
     agent = TicTacToeBot()
     optimizer = torch.optim.Adam(agent.parameters(), lr = learning_rate)
 
-    num_epochs = 100
+    num_epochs = 20
+    training_buffer = deque(maxlen=10000)
     for epoch in range(0, num_epochs):
-        training_data = generate_training_data(agent, 10, 1000)
-        for triplet in training_data:
 
+        training_buffer += generate_training_data(agent, 100, 200)
+        triplet_index = np.random.randint(len(training_buffer))
+        triplet = training_buffer[triplet_index]
+
+        for _ in range(0, train_steps_per_iteration):
             optimizer.zero_grad()
 
             state, mcts_policy, outcome = triplet
@@ -310,41 +317,11 @@ def train(loss_factor = 1):
             value_loss = (value - outcome) ** 2
             policy_loss = nn.CrossEntropyLoss()(neural_logits, mcts_policy)
             total_loss = (value_loss + policy_loss)
-            print("total_loss:", total_loss)
+            # print("total_loss:", total_loss)
             total_loss.backward()
             optimizer.step()
         print("epoch:", epoch, " | total_loss:", total_loss)
-        input()
         
 
 train()
 
-# custom_tiles = \
-# [
-#     ["*", "*", "x"],
-#     ["*", "*", "o"],
-#     ["*", "*", "*"]
-# ]
-# whoseTurn = "x"
-# custom_board = Board(custom_tiles)
-# initial_state = GameState(whoseTurn, board=custom_board)
-# initial_state = GameState()
-
-# agent = TicTacToeBot()
-# result = runMCTS(agent, initial_state, 100)
-
-
-
-# current_node = result
-# current_state = current_node.game_state
-# while current_node.child_nodes:
-#     current_state = current_node.game_state
-
-#     child_scores = [node.times_visited for node in current_node.child_nodes]
-#     best_child_index = child_scores.index(max(child_scores))
-#     best_child = current_node.child_nodes[best_child_index]
-#     current_node = best_child
-#     print(current_state.board)
-
-# current_state = current_node.game_state
-# print(current_state.board)
